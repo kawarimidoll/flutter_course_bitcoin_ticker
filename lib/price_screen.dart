@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_course_bitcoin_ticker/coin_data.dart';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -29,7 +30,7 @@ class _PriceScreenState extends State<PriceScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
-                  '1 BTC = ? USD',
+                  '1 BTC = ? $selectedCurrency',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,
@@ -46,11 +47,14 @@ class _PriceScreenState extends State<PriceScreen> {
             color: Colors.lightBlue,
             child: DropdownButton<String>(
                 value: selectedCurrency,
-                items: [
-                  DropdownMenuItem(child: Text('USD'), value: 'USD'),
-                  DropdownMenuItem(child: Text('EUR'), value: 'EUR'),
-                  DropdownMenuItem(child: Text('GDP'), value: 'GDP'),
-                ],
+                items: currenciesList
+                    .map(
+                      (entry) => DropdownMenuItem(
+                        child: Text(entry),
+                        value: entry,
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     if (value != null) {

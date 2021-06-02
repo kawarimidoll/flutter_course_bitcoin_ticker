@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_course_bitcoin_ticker/coin_data.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:throttling/throttling.dart';
 import 'package:universal_io/io.dart' show Platform;
 import 'dart:convert';
 
@@ -44,20 +45,41 @@ class PriceScreen extends StatefulWidget {
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'USD';
   int initialIndex = 0;
+  List rateList = [];
+
+  final deb = Debouncing(duration: const Duration(seconds: 1));
 
   @override
   void initState() {
     super.initState();
+    initRateList();
     getRateData();
+
     initialIndex = currenciesList.indexOf(selectedCurrency);
   }
 
+  void initRateList() {
+    rateList = cryptoList
+        .map((crypto) => {
+              'asset': crypto,
+              'rate': '?',
+            })
+        .toList();
+  }
+
   void getRateData() async {
-    var data = await getCurrencyRate('BTC', selectedCurrency);
-    if (data == null) {
-      return;
-    }
-    print(data);
+    rateList = await Future.wait(cryptoList.map((crypto) async {
+      var data = await getCurrencyRate(crypto, selectedCurrency);
+      return {
+        'asset': crypto,
+        'rate': data == null ? '-' : data['rate'].toStringAsFixed(0),
+      };
+    }).toList());
+
+    print(rateList);
+
+    // update view
+    setState(() {});
   }
 
   void updateCurrency(String? currencyName) {
@@ -67,8 +89,12 @@ class _PriceScreenState extends State<PriceScreen> {
 
     setState(() {
       selectedCurrency = currencyName;
+      initRateList();
     });
-    print(selectedCurrency);
+    deb.debounce(() {
+      print(selectedCurrency);
+      getRateData();
+    });
   }
 
   DropdownButton<String> androidPicker() => DropdownButton<String>(
@@ -118,9 +144,9 @@ class _PriceScreenState extends State<PriceScreen> {
             padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: cryptoList
+              children: rateList
                   .map(
-                    (crypto) => Card(
+                    (cryptoRate) => Card(
                       color: Colors.lightBlueAccent,
                       elevation: 5.0,
                       shape: RoundedRectangleBorder(
@@ -132,7 +158,7 @@ class _PriceScreenState extends State<PriceScreen> {
                           horizontal: 28.0,
                         ),
                         child: Text(
-                          '1 $crypto = ? $selectedCurrency',
+                          '1 ${cryptoRate['asset']} = ${cryptoRate['rate']} $selectedCurrency',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 20.0,

@@ -1,41 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_course_bitcoin_ticker/coin_data.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
 import 'package:throttling/throttling.dart';
 import 'package:universal_io/io.dart' show Platform;
-import 'dart:convert';
-
-class NetworkHelper {
-  late Uri url;
-
-  Future<String> loadApiKey() async {
-    await dotenv.load();
-    return dotenv.env['COINAPI_APIKEY'] ?? '';
-  }
-
-  NetworkHelper(this.url);
-
-  Future getData() async {
-    String apiKey = await loadApiKey();
-    Map<String, String> headers = {'X-CoinAPI-Key': apiKey};
-    http.Response response = await http.get(url, headers: headers);
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      print('Request failed with status: ${response.statusCode}');
-    }
-  }
-}
-
-Future<dynamic> getCurrencyRate(String cryptoName, String currencyName) async =>
-    await NetworkHelper(
-      Uri.https(
-        'rest.coinapi.io',
-        '/v1/exchangerate/$cryptoName/$currencyName',
-      ),
-    ).getData();
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -69,7 +36,7 @@ class _PriceScreenState extends State<PriceScreen> {
 
   void getRateData() async {
     rateList = await Future.wait(cryptoList.map((crypto) async {
-      var data = await getCurrencyRate(crypto, selectedCurrency);
+      var data = await CoinData().getCurrencyRate(crypto, selectedCurrency);
       return {
         'asset': crypto,
         'rate': data == null ? '-' : data['rate'].toStringAsFixed(0),

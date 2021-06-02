@@ -43,11 +43,13 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'USD';
+  int initialIndex = 0;
 
   @override
   void initState() {
     super.initState();
     getRateData();
+    initialIndex = currenciesList.indexOf(selectedCurrency);
   }
 
   void getRateData() async {
@@ -89,6 +91,9 @@ class _PriceScreenState extends State<PriceScreen> {
         onSelectedItemChanged: (selectedIndex) {
           updateCurrency(currenciesList[selectedIndex]);
         },
+        scrollController: FixedExtentScrollController(
+          initialItem: initialIndex,
+        ),
         children: currenciesList
             .map(
               (entry) => Text(
